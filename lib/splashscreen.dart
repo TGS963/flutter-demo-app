@@ -6,9 +6,6 @@ import 'dashboard.dart';
 import 'registration/registration.dart';
 
 class MySplashScreen extends StatefulWidget {
-  const MySplashScreen({Key? key, required this.title});
-  final String title;
-
   @override
   _MySplashScreenState createState() => _MySplashScreenState();
 }

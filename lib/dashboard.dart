@@ -24,7 +24,7 @@ class Dashboard extends StatelessWidget {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MySplashScreen(title: "Intro Page"),
+                      builder: (context) => MySplashScreen(),
                     ),
                     (Route<dynamic> route) => false,
                   );
