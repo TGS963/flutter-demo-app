@@ -10,7 +10,7 @@ Future<Database> createDatabase() async {
     join(await getDatabasesPath(), 'user_database.db'),
     onCreate: (db, version) {
       return db.execute(
-        "CREATE TABLE users(id INTEGER PRIMARY KEY, email TEXT, password TEXT, loginTime INTEGER, loggedIn BOOLEAN)",
+        "CREATE TABLE users(id TEXT PRIMARY KEY, email TEXT, password TEXT, loginTime INTEGER)",
       );
     },
     version: 1,
@@ -47,12 +47,11 @@ Future<List<User>> getUsers() async {
       email: maps[i]['email'],
       password: maps[i]['password'],
       loginTime: maps[i]['loginTime'],
-      loggedIn: maps[i]['loggedIn'] == 1,
     );
   });
 }
 
-Future<void> updateUserLoginTime(int id, int loginTime) async {
+Future<void> updateUserLoginTime(String id, int loginTime) async {
   final db = await database;
 
   await db.update(

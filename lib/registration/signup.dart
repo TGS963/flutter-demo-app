@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:uuid/uuid.dart';
 import '../utils/db.dart';
 import '../utils/helpers.dart';
 
@@ -16,15 +16,14 @@ class _MySignupPage extends State<MySignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  var uuid = Uuid();
 
   Future<void> _signup(BuildContext context) async {
     final newUser = User(
-      id: DateTime.now()
-          .millisecondsSinceEpoch, // Use current timestamp as unique id
+      id: uuid.v4(),
       email: _emailController.text,
       password: hashPassword(_passwordController.text),
       loginTime: DateTime.now().millisecondsSinceEpoch,
-      loggedIn: true,
     );
 
     await insertUser(newUser);

@@ -38,8 +38,8 @@ class _MyLoginPage extends State<MyLoginPage> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => Dashboard(email: user.email)),
-        (Route<dynamic> route) => false, // Never go back
+        MaterialPageRoute(builder: (context) => const Dashboard()),
+        (Route<dynamic> route) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

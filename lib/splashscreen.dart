@@ -18,8 +18,6 @@ class _MySplashScreenState extends State<MySplashScreen> {
   }
 
   Future<void> checkLoginTime() async {
-    await Future.delayed(const Duration(seconds: 15));
-
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String email = prefs.getString('email') ?? '';
 
@@ -27,24 +25,24 @@ class _MySplashScreenState extends State<MySplashScreen> {
     final users = await getUsers();
     final user = users.firstWhereOrNull((user) => user.email == email);
 
+    await Future.delayed(const Duration(seconds: 5));
+
     final loginTime = user?.loginTime;
 
     if (loginTime != null && user != null) {
       var now = DateTime.now().millisecondsSinceEpoch;
-      var thirtySeconds = 30 * 1000; //10 seconds
-      updateUserLoginTime(user.id, now);
+      var thirtySeconds = 30 * 1000; //30 seconds
       if ((now - loginTime < thirtySeconds) && email != '') {
+        updateUserLoginTime(user.id, now);
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (context) => Dashboard(
-                      email: prefs.getString('email')!,
-                    )),
+            MaterialPageRoute(builder: (context) => const Dashboard()),
             (Route<dynamic> route) => false,
           );
         }
       } else {
+        prefs.clear();
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -54,6 +52,7 @@ class _MySplashScreenState extends State<MySplashScreen> {
         }
       }
     } else {
+      prefs.clear();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,

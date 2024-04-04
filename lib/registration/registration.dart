@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'login.dart';
 import 'signup.dart';
 
@@ -8,7 +7,7 @@ class RegistrationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Intro Page'),
+        title: const Text('Registration Page'),
       ),
       body: Center(
         child: Row(

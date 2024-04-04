@@ -1,10 +1,28 @@
+import 'package:demo_project/registration/registration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
-import 'splashscreen.dart';
 
-class Dashboard extends StatelessWidget {
-  const Dashboard({Key? key, required this.email}) : super(key: key);
-  final String email;
+class Dashboard extends StatefulWidget {
+  const Dashboard({Key? key}) : super(key: key);
+  @override
+  _DashBoardState createState() => _DashBoardState();
+}
+
+class _DashBoardState extends State<Dashboard> {
+  String email = '';
+  @override
+  void initState() {
+    super.initState();
+    _getEmail();
+  }
+
+  _getEmail() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      email = prefs.getString('email') ?? '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +42,7 @@ class Dashboard extends StatelessWidget {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MySplashScreen(),
+                      builder: (context) => RegistrationPage(),
                     ),
                     (Route<dynamic> route) => false,
                   );
