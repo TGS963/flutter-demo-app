@@ -20,9 +20,7 @@ class Dashboard extends StatelessWidget {
                 onPressed: () async {
                   SharedPreferences prefs =
                       await SharedPreferences.getInstance();
-                  prefs.remove('email');
-                  prefs.remove('password');
-                  prefs.remove('loginTime');
+                  prefs.remove('loggedIn');
                   Navigator.push(
                     context,
                     MaterialPageRoute(

@@ -128,6 +128,7 @@ class _MyLoginPage extends State<MyLoginPage> {
     final username = prefs.getString('email');
     final password = prefs.getString('password');
     prefs.setInt('loginTime', DateTime.now().millisecondsSinceEpoch);
+    prefs.setBool('loggedIn', true);
 
     if (_emailController.text == username &&
         hashPassword(_passwordController.text) == password) {
