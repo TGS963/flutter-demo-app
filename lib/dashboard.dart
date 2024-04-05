@@ -4,23 +4,32 @@ import 'package:flutter/material.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
+
   @override
-  _DashBoardState createState() => _DashBoardState();
+  _DashboardState createState() => _DashboardState();
 }
 
-class _DashBoardState extends State<Dashboard> {
-  String email = '';
+class _DashboardState extends State<Dashboard> {
   @override
   void initState() {
     super.initState();
-    _getEmail();
+    _verifyUser();
   }
 
-  _getEmail() async {
+  _verifyUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      email = prefs.getString('email') ?? '';
-    });
+    final accessToken = prefs.getString('accessToken') ?? '';
+    final refreshToken = prefs.getString('refreshToken') ?? '';
+
+    if (accessToken == '' || refreshToken == '') {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RegistrationPage(),
+        ),
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   @override
@@ -33,7 +42,7 @@ class _DashBoardState extends State<Dashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Welcome, you're logged in as $email"),
+            Text("Welcome, you're logged in into a protected route!"),
             ElevatedButton(
                 onPressed: () async {
                   SharedPreferences prefs =

@@ -1,8 +1,8 @@
-import 'package:demo_project/utils/helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:collection/collection.dart';
 import 'dashboard.dart';
+import 'helpers.dart';
+import 'main.dart';
 import 'registration/registration.dart';
 
 class MySplashScreen extends StatefulWidget {
@@ -14,44 +14,30 @@ class _MySplashScreenState extends State<MySplashScreen> {
   @override
   void initState() {
     super.initState();
-    checkLoginTime();
+    checkAccessToken();
   }
 
-  Future<void> checkLoginTime() async {
+  Future<void> checkAccessToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String email = prefs.getString('email') ?? '';
+    String accessToken = prefs.getString('accessToken') ?? '';
+    String refreshToken = prefs.getString('refreshToken') ?? '';
 
-    // get login time from db
-    final users = await getUsers();
-    final user = users.firstWhereOrNull((user) => user.email == email);
+    final accessTokenCreationTime =
+        prefs.getInt('accessTokenCreationTime') ?? 0;
+    final refreshTokenCreationTime =
+        prefs.getInt('refreshTokenCreationTime') ?? 0;
 
-    await Future.delayed(const Duration(seconds: 5));
+    final isAccessTokenExpired = DateTime.now().difference(
+          DateTime.fromMillisecondsSinceEpoch(accessTokenCreationTime),
+        ) >
+        const Duration(seconds: 15);
 
-    final loginTime = user?.loginTime;
+    final isRefreshTokenExpired = DateTime.now().difference(
+          DateTime.fromMillisecondsSinceEpoch(refreshTokenCreationTime),
+        ) >
+        const Duration(minutes: 2);
 
-    if (loginTime != null && user != null) {
-      var now = DateTime.now().millisecondsSinceEpoch;
-      var thirtySeconds = 30 * 1000; //30 seconds
-      if ((now - loginTime < thirtySeconds) && email != '') {
-        updateUserLoginTime(user.id, now);
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const Dashboard()),
-            (Route<dynamic> route) => false,
-          );
-        }
-      } else {
-        prefs.clear();
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => RegistrationPage()),
-            (Route<dynamic> route) => false,
-          );
-        }
-      }
-    } else {
+    if (accessToken == '' || refreshToken == '') {
       prefs.clear();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
@@ -59,6 +45,118 @@ class _MySplashScreenState extends State<MySplashScreen> {
           MaterialPageRoute(builder: (context) => RegistrationPage()),
           (Route<dynamic> route) => false,
         );
+        return;
+      }
+    }
+
+    if (isAccessTokenExpired && !isRefreshTokenExpired) {
+      final response = await apiFetch('/auth/tokens/', refreshToken, null);
+      if (response['status'] != null && response['status'] == 'success') {
+        scaffoldMessengerKey.currentState!.showSnackBar(
+          SnackBar(
+            content: Text(response['message']),
+          ),
+        );
+        await addToSharedPrefs(
+          response['Authorization'][0],
+          refreshToken,
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+          (Route<dynamic> route) => false,
+        );
+        return;
+      } else {
+        prefs.clear();
+        if (mounted) {
+          scaffoldMessengerKey.currentState!.showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RegistrationPage()),
+            (Route<dynamic> route) => false,
+          );
+          return;
+        }
+      }
+    } else if (isAccessTokenExpired && isRefreshTokenExpired) {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        const SnackBar(
+          content: Text("Refresh token has been invalidated"),
+        ),
+      );
+      prefs.clear();
+      if (mounted) {
+        scaffoldMessengerKey.currentState!.showSnackBar(
+          const SnackBar(
+            content: Text(
+                "Refresh token has been invalidated. Please login or register again."),
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => RegistrationPage()),
+          (Route<dynamic> route) => false,
+        );
+        return;
+      }
+    }
+
+    final response = await apiFetch('/auth/splashscreen/', accessToken, null);
+
+    if (response['status'] != null && response['status'] == 'success') {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+        ),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Dashboard()),
+        (Route<dynamic> route) => false,
+      );
+      return;
+    } else if (response['status'] != null && response['status'] == 'error') {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+        ),
+      );
+      final accessTokenResponse =
+          await apiFetch('/auth/tokens/', refreshToken, null);
+      prefs.clear();
+      if (accessTokenResponse['status'] != null &&
+          accessTokenResponse['status'] == 'success') {
+        await addToSharedPrefs(
+          accessTokenResponse['Authorization'][0],
+          refreshToken,
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Dashboard()),
+          (Route<dynamic> route) => false,
+        );
+        return;
+      } else {
+        prefs.clear();
+        if (mounted) {
+          scaffoldMessengerKey.currentState!.showSnackBar(
+            const SnackBar(
+              content: Text(
+                  "Refresh token has been invalidated. Please login or register again."),
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => RegistrationPage()),
+            (Route<dynamic> route) => false,
+          );
+          return;
+        }
       }
     }
   }

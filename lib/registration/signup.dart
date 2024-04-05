@@ -1,7 +1,7 @@
+import 'package:demo_project/helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import '../utils/db.dart';
-import '../utils/helpers.dart';
+import '../dashboard.dart';
+import '../main.dart';
 
 class MySignupPage extends StatefulWidget {
   const MySignupPage({Key? key, required this.title}) : super(key: key);
@@ -13,28 +13,47 @@ class MySignupPage extends StatefulWidget {
 }
 
 class _MySignupPage extends State<MySignupPage> {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  var uuid = Uuid();
+  bool isLoading = false;
 
   Future<void> _signup(BuildContext context) async {
-    final newUser = User(
-      id: uuid.v4(),
-      email: _emailController.text,
-      password: hashPassword(_passwordController.text),
-      loginTime: DateTime.now().millisecondsSinceEpoch,
-    );
+    setState(() {
+      isLoading = true;
+    });
+    final response = await apiFetch('/user/register', '', {
+      'email': _emailController.text,
+      'password': _passwordController.text,
+      'username': _usernameController.text,
+    });
+    setState(() {
+      isLoading = false;
+    });
 
-    await insertUser(newUser);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Signup successful! Please login to continue.'),
-      ),
-    );
-
-    Navigator.pop(context);
+    if (response['status'] != null && response['status'] == 'error') {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+        ),
+      );
+      return;
+    } else if (response['status'] != null && response['status'] == 'success') {
+      await addToSharedPrefs(
+          response['Authorization'][0], response['Authorization'][1]);
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+        ),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Dashboard()),
+        (Route<dynamic> route) => false,
+      );
+      return;
+    }
   }
 
   @override
@@ -49,6 +68,21 @@ class _MySignupPage extends State<MySignupPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter username';
+                    }
+                    return null;
+                  },
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
@@ -88,7 +122,13 @@ class _MySignupPage extends State<MySignupPage> {
                       _signup(context);
                     }
                   },
-                  child: const Text('Submit'),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text('Submit'),
                 ),
               ),
             ],

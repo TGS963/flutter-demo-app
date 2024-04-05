@@ -1,8 +1,7 @@
+import 'package:demo_project/helpers.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:collection/collection.dart';
 import '../dashboard.dart';
-import '../utils/helpers.dart';
+import '../main.dart';
 
 class MyLoginPage extends StatefulWidget {
   const MyLoginPage({Key? key, required this.title}) : super(key: key);
@@ -17,33 +16,41 @@ class _MyLoginPage extends State<MyLoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool isLoading = false;
 
   Future<void> _login(BuildContext context) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final users = await getUsers();
-    final user = users.firstWhereOrNull(
-      (user) =>
-          user.email == _emailController.text &&
-          user.password == hashPassword(_passwordController.text),
-    );
+    setState(() {
+      isLoading = true;
+    });
+    final response = await apiFetch('/auth/login/', '', {
+      'email': _emailController.text,
+      'password': _passwordController.text,
+    });
+    setState(() {
+      isLoading = false;
+    });
 
-    if (user != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
+    if (response['status'] != null && response['status'] == 'error') {
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
         ),
       );
-      updateUserLoginTime(user.id, DateTime.now().millisecondsSinceEpoch);
-      prefs.setString('email', user.email);
-
+      return;
+    } else if (response['status'] != null && response['status'] == 'success') {
+      await addToSharedPrefs(
+          response['Authorization'][0], response['Authorization'][1]);
+      scaffoldMessengerKey.currentState!.showSnackBar(
+        SnackBar(
+          content: Text(response['message']),
+        ),
+      );
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const Dashboard()),
         (Route<dynamic> route) => false,
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid username or password')));
+      return;
     }
   }
 
@@ -98,7 +105,13 @@ class _MyLoginPage extends State<MyLoginPage> {
                       _login(context);
                     }
                   },
-                  child: const Text('Submit'),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text('Submit'),
                 ),
               ),
             ],
