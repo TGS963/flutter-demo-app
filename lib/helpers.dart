@@ -7,14 +7,16 @@ const String baseUrl =
     'https://radiox-api.wonderfulsea-1d4ac329.southeastasia.azurecontainerapps.io';
 
 Future<Map<String, dynamic>> apiFetch(
-    String url, String token, Map<String, String>? body) async {
+    String url, String token, Map<String, dynamic>? body) async {
+  Map<String, String> headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+  if (token != '') {
+    headers['Authorization'] = 'Bearer ' + token;
+  }
   final response = await http.post(Uri.parse(baseUrl + url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: body != null ? jsonEncode(body) : null);
+      headers: headers, body: body != null ? jsonEncode(body) : null);
 
   if (response.statusCode == 200 || response.statusCode == 201) {
     return jsonDecode(response.body);
